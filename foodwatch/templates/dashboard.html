@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FoodWatch Kenya</title>
+<link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='foodwatch-logo.svg') }}">
+<style>
+/* ---------- Design tokens ---------- */
+:root{
+  --bg:#f2f4ef; --panel:#ffffff; --ink:#16241c; --mute:#56645b; --line:#d5dcd2;
+  --hist:#1f6b4a; --fc:#a86f00; --up:#b3301d; --down:#1f6b4a; --flat:#56645b; --focus:#0b5cad;
+  --font:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",sans-serif;
+  --fs-xs:.8125rem; --fs-sm:.875rem; --fs-base:1rem; --fs-lg:1.125rem; --fs-xl:1.25rem; --fs-2xl:1.5rem; --fs-hero:3.5rem;
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s6:24px; --s8:32px; --s12:48px;
+  --r-sm:8px; --r-md:12px; --shadow:0 1px 2px rgb(0 0 0/.06);
+  --t:150ms ease; --tap:44px;
+}
+:root[data-theme="dark"]{
+  --bg:#121a15; --panel:#1b261f; --ink:#eaf0ea; --mute:#a3b2a8; --line:#2c3a31;
+  --hist:#5cc08f; --fc:#e8b53a; --up:#ef7a66; --down:#5cc08f; --flat:#a3b2a8; --focus:#8ab4ff; --shadow:none;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#121a15; --panel:#1b261f; --ink:#eaf0ea; --mute:#a3b2a8; --line:#2c3a31;
+    --hist:#5cc08f; --fc:#e8b53a; --up:#ef7a66; --down:#5cc08f; --flat:#a3b2a8; --focus:#8ab4ff; --shadow:none;
+  }
+}
+/* ---------- Base ---------- */
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:var(--fs-base)/1.5 var(--font)}
+:focus-visible{outline:3px solid var(--focus);outline-offset:2px;border-radius:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.skip{position:absolute;left:var(--s4);top:-60px;background:var(--ink);color:var(--bg);padding:var(--s2) var(--s4);border-radius:var(--r-sm);z-index:10}
+.skip:focus{top:var(--s2)}
+.sub{color:var(--mute);font-size:var(--fs-sm)}
+/* ---------- Header + controls ---------- */
+header{display:flex;flex-wrap:wrap;gap:var(--s4);align-items:center;justify-content:space-between;padding:var(--s4);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:var(--s3)}
+.logo{width:52px;height:52px;flex:none}
+h1{margin:0;font-size:var(--fs-2xl);letter-spacing:-.01em;line-height:1.2}
+.bar{display:flex;flex-wrap:wrap;gap:var(--s3);align-items:center}
+.tabs{display:flex;gap:var(--s1);background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s1)}
+.btn{min-height:var(--tap);padding:0 var(--s4);border:0;border-radius:var(--r-sm);background:none;color:var(--mute);font:inherit;cursor:pointer;transition:background var(--t),color var(--t)}
+.btn:hover{color:var(--ink)}
+.bar{max-width:100%}.tabs{max-width:100%}.tabs .btn{padding:0 var(--s3);flex:1 1 auto}
+.tabs .btn[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.btn.ghost{border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+main{padding:var(--s4);max-width:1280px;margin:0 auto}
+.controls{display:flex;flex-wrap:wrap;gap:var(--s4);margin-bottom:var(--s6)}
+label{display:flex;flex-direction:column;font-size:var(--fs-sm);color:var(--mute);gap:var(--s1)}
+select{min-height:var(--tap);font:inherit;padding:0 var(--s3);border-radius:var(--r-sm);border:1px solid var(--line);background:var(--panel);color:var(--ink);min-width:220px}
+/* ---------- Cards ---------- */
+.grid,.below{display:grid;gap:var(--s4);grid-template-columns:1fr}
+.below{margin-top:var(--s4)}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r-md);padding:var(--s4);box-shadow:var(--shadow);min-width:0}
+.card h2{margin:0 0 var(--s1);font-size:var(--fs-lg)}
+.chartbox{position:relative;height:300px;margin-top:var(--s3)}
+.signal{display:flex;align-items:center;gap:var(--s3);margin:var(--s3) 0}
+.arrow{font-size:var(--fs-hero);font-weight:700;line-height:1}
+.word{font-size:var(--fs-xl);font-weight:600}
+.up{color:var(--up)}.down{color:var(--down)}.stable{color:var(--flat)}
+.advice{font-size:var(--fs-lg);margin:var(--s3) 0;padding:var(--s3) var(--s4);border-left:4px solid var(--fc);background:var(--bg);border-radius:0 var(--r-sm) var(--r-sm) 0}
+.facts{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3);margin:var(--s4) 0 0}
+.facts div{font-size:var(--fs-sm);color:var(--mute)}
+.facts b{display:block;font-size:var(--fs-xl);color:var(--ink)}
+.note{color:var(--mute);font-size:var(--fs-sm);margin:var(--s3) 0 0}
+/* ---------- Tables ---------- */
+.scroll{overflow-x:auto}
+.tall{max-height:420px;overflow-y:auto}
+.tall th{position:sticky;top:0;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:var(--fs-sm)}
+th,td{text-align:left;padding:var(--s2) var(--s2);border-bottom:1px solid var(--line)}
+th{color:var(--mute);font-weight:600}
+td .link{min-height:var(--tap);background:none;border:0;padding:0;font:inherit;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;text-align:left}
+.spike{color:var(--up);font-weight:600}
+.empty{color:var(--mute);padding:var(--s4) 0}
+/* ---------- States ---------- */
+.skeleton{background:linear-gradient(90deg,var(--line),var(--bg),var(--line));background-size:200% 100%;border-radius:var(--r-sm);animation:sk 1.4s linear infinite;height:20px;margin:var(--s2) 0}
+@keyframes sk{to{background-position:-200% 0}}
+.error{display:flex;flex-wrap:wrap;gap:var(--s3);align-items:center;margin:var(--s4);padding:var(--s4);border:1px solid var(--up);border-radius:var(--r-md);color:var(--ink);background:var(--panel)}
+footer{padding:var(--s4);color:var(--mute);font-size:var(--fs-xs);text-align:center}
+[hidden]{display:none!important}
+/* ---------- Breakpoints ---------- */
+@media (max-width:639px){.bar{width:100%}.tabs{flex:1 1 auto}.tabs .btn{padding:0 var(--s2);font-size:var(--fs-sm);min-width:0}}
+@media (min-width:640px){header,main{padding-left:var(--s6);padding-right:var(--s6)}.chartbox{height:340px}}
+@media (min-width:768px){.below{grid-template-columns:1fr 1fr}}
+@media (min-width:1024px){header,main{padding-left:var(--s8);padding-right:var(--s8)}.grid{grid-template-columns:2fr 1fr}.chartbox{height:380px}.card{padding:var(--s6)}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to dashboard</a>
+<header>
+  <div class="brand"><svg class="logo" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-hidden="true">
+  <path d="M29 17C24 12 9 14 9 30C9 43 18 55 25 55C27 55 28 54 29 54C30 54 31 55 33 55C40 55 49 43 49 30C49 14 34 12 29 17Z" fill="var(--up)"/>
+  <path d="M29 17C29 12 31 8 34 6" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M33 10C37 4 43 5 45 8C42 12 36 13 33 10Z" fill="var(--hist)"/>
+  <line x1="53" y1="51" x2="59" y2="58" stroke="var(--ink)" stroke-width="5.5" stroke-linecap="round"/>
+  <circle cx="42" cy="40" r="13" fill="var(--panel)" fill-opacity="0.7" stroke="var(--ink)" stroke-width="4"/>
+  <polyline points="34,46 39,41 43,43.5 49,34" fill="none" stroke="var(--fc)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+</svg><div><h1>FoodWatch Kenya</h1><div class="sub" id="sub">Loading…</div></div></div>
+  <div class="bar">
+    <div class="tabs" role="tablist" aria-label="Who is this for?" id="tabs">
+      <button class="btn" role="tab" id="t-household" aria-selected="true" aria-controls="content" data-view="household">Households</button>
+      <button class="btn" role="tab" id="t-vendor" aria-selected="false" tabindex="-1" aria-controls="content" data-view="vendor">Vendors</button>
+      <button class="btn" role="tab" id="t-policy" aria-selected="false" tabindex="-1" aria-controls="content" data-view="policy">Policymakers</button>
+    </div>
+    <button class="btn ghost" id="theme" aria-label="Switch colour theme">Theme</button>
+  </div>
+</header>
+<div class="error" id="err" role="alert" hidden>
+  <span>The price data could not be loaded. Check that <code>python app.py</code> is running.</span>
+  <button class="btn ghost" id="retry">Try again</button>
+</div>
+<main id="content" role="tabpanel" tabindex="-1" aria-busy="true">
+  <div class="controls">
+    <label>Market<select id="market"></select></label>
+    <label>Food item<select id="commodity"></select></label>
+  </div>
+  <div class="grid">
+    <section class="card" aria-labelledby="chartTitle">
+      <h2 id="chartTitle">Price per kg</h2>
+      <div class="sub">Last 5 years of monthly prices, with a 6-month forecast</div>
+      <div class="chartbox"><canvas id="chart" role="img" aria-label="Price chart"></canvas></div>
+    </section>
+    <section class="card" aria-labelledby="sigTitle">
+      <h2 id="sigTitle">What to expect</h2>
+      <div aria-live="polite">
+        <div class="signal"><span class="arrow" id="arrow" aria-hidden="true"></span><span class="word" id="word"><div class="skeleton" style="width:160px"></div></span></div>
+        <div class="advice" id="advice"><div class="skeleton"></div></div>
+      </div>
+      <div class="facts">
+        <div>Price now<b id="now">–</b></div>
+        <div>In 6 months (est.)<b id="in6">–</b></div>
+        <div>Next month<b id="in1">–</b></div>
+        <div>Typical forecast error<b id="errv">–</b></div>
+      </div>
+      <p class="note">Forecast method: <span id="model">–</span>. Treat this as a guide, not a guarantee.</p>
+    </section>
+  </div>
+  <div class="below">
+    <section class="card" aria-labelledby="tblTitle">
+      <h2 id="tblTitle">All foods in this market</h2>
+      <div class="scroll"><table><thead id="thead"></thead><tbody id="tbody"></tbody></table></div>
+    </section>
+    <section class="card" aria-labelledby="anomTitle">
+      <h2 id="anomTitle">Unusual price moves</h2>
+      <div class="sub" id="anomSub"></div>
+      <div class="scroll tall" id="anomScroll" tabindex="0" role="region" aria-label="List of unusual price moves"><table><thead><tr><th scope="col">Month</th><th scope="col">Item and market</th><th scope="col">Change</th></tr></thead><tbody id="anom"></tbody></table></div>
+    </section>
+  </div>
+  <p class="note" id="policyNote" hidden>This data covers prices only. It shows where and when prices are moving, not how much is being produced, stored or imported. Adding that data would be the next step toward supply planning.</p>
+</main>
+<footer id="foot"></footer>
+<script src="{{ url_for('static', filename='chart.umd.js') }}"></script>
+<script>
+const $ = id => document.getElementById(id);
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+Chart.defaults.animation.duration = reduce ? 0 : 400;
+let D, view = "household", chart;
+const ADVICE = {
+  household:{up:"Likely to cost more in the coming months. Consider buying a little extra now.",down:"May get cheaper. Buy only what you need for now.",stable:"Expected to hold steady. No need to rush."},
+  vendor:{up:"Prices are heading up. Stock up before they rise.",down:"Prices are easing. Hold off on large orders.",stable:"Prices look steady. Keep your usual stock levels."},
+  policy:{up:"Upward pressure. Worth monitoring this market for intervention.",down:"Prices easing. No action signal.",stable:"Stable outlook. No action signal."}
+};
+const ARROW={up:"▲",down:"▼",stable:"●"}, WORD={up:"Likely to rise",down:"Likely to fall",stable:"Likely steady"};
+const kes=v=>"KES "+v.toFixed(0), pct=v=>(v>0?"+":"")+v.toFixed(1)+"%";
+const key=()=>$("commodity").value+" | "+$("market").value;
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* theme */
+const root=document.documentElement;
+const isDark=()=>root.dataset.theme?root.dataset.theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+$("theme").onclick=()=>{root.dataset.theme=isDark()?"light":"dark"; if(D) render();};
+
+/* load */
+function load(){
+  $("err").hidden=true;
+  fetch("/api/results").then(r=>{if(!r.ok) throw 0; return r.json();}).then(d=>{
+    D=d;
+    $("market").innerHTML=d.markets.map(m=>`<option>${m}</option>`).join("");
+    $("commodity").innerHTML=d.commodities.map(c=>`<option>${c}</option>`).join("");
+    $("sub").textContent=`Food price outlook · ${d.stats.markets} markets and ${d.stats.commodities} foods in the data, ${d.stats.from}–${d.stats.to}`;
+    $("foot").textContent=`Source: WFP food prices for Kenya (${d.stats.rows.toLocaleString()} records). Forecasts and alerts use retail prices for 5 staples in ${d.markets.length} markets.`;
+    $("content").setAttribute("aria-busy","false"); render();
+  }).catch(()=>{$("err").hidden=false; $("sub").textContent="Data unavailable";});
+}
+$("retry").onclick=load; load();
+$("market").onchange=$("commodity").onchange=()=>D&&render();
+
+/* tabs with arrow-key support */
+const tabs=[...document.querySelectorAll("[role=tab]")];
+function setView(btn){view=btn.dataset.view;
+  tabs.forEach(t=>{const on=t===btn;t.setAttribute("aria-selected",on);t.tabIndex=on?0:-1;});
+  $("content").setAttribute("aria-labelledby",btn.id); if(D) render();}
+tabs.forEach((t,i)=>{t.onclick=()=>setView(t);
+  t.onkeydown=e=>{const k={ArrowRight:1,ArrowLeft:-1}[e.key]; if(!k) return;
+    const n=tabs[(i+k+tabs.length)%tabs.length]; n.focus(); setView(n);};});
+
+function pick(c,m){$("commodity").value=c;$("market").value=m;render();}
+document.addEventListener("click",e=>{const b=e.target.closest("[data-c]"); if(b) pick(b.dataset.c,b.dataset.m);});
+
+function render(){
+  const s=D.series[key()];
+  $("chartTitle").textContent=`${s.commodity} price per kg · ${s.market}`;
+  $("arrow").textContent=ARROW[s.direction]; $("arrow").className="arrow "+s.direction;
+  $("word").textContent=WORD[s.direction]; $("word").className="word "+s.direction;
+  $("advice").textContent=ADVICE[view][s.direction];
+  $("now").textContent=kes(s.now);
+  $("in6").textContent=`${kes(s.forecast.values[5])} (${pct(s.change_6m)})`;
+  $("in1").textContent=`${kes(s.forecast.values[0])} (${pct(s.change_1m)})`;
+  $("errv").textContent="± KES "+s.rmse.toFixed(0);
+  $("model").textContent=s.model;
+  $("sigTitle").textContent=view==="policy"?"Market signal":"What to expect";
+  $("policyNote").hidden=view!=="policy";
+  $("chart").setAttribute("aria-label",`${s.commodity} in ${s.market}: now ${kes(s.now)}, forecast ${kes(s.forecast.values[5])} in 6 months. ${WORD[s.direction]}. ${s.anomalies.length} unusual months marked.`);
+  drawChart(s); drawTable(s); drawAnomalies(s);
+}
+
+function drawChart(s){
+  const hl=s.history.labels, fl=s.forecast.labels, pad=n=>Array(n).fill(null), last=s.history.values.at(-1);
+  const hist=s.history.values.concat(pad(fl.length));
+  const fc=pad(hl.length-1).concat([last],s.forecast.values);
+  const hi=pad(hl.length-1).concat([last],s.forecast.values.map((v,i)=>v+s.forecast.band[i]));
+  const lo=pad(hl.length-1).concat([last],s.forecast.values.map((v,i)=>Math.max(0,v-s.forecast.band[i])));
+  const an=new Set(s.anomalies.map(a=>a.date));
+  const ds=[
+    {label:"Price",data:hist,borderColor:css("--hist"),borderWidth:2.5,tension:.2,
+     pointRadius:hl.map(l=>an.has(l)?7:0),pointStyle:"triangle",pointBackgroundColor:css("--up"),pointBorderWidth:0},
+    {label:"Forecast",data:fc,borderColor:css("--fc"),borderDash:[6,5],pointRadius:0,borderWidth:2.5,tension:.2},
+    {label:"upper",data:hi,borderColor:"transparent",pointRadius:0},
+    {label:"Likely range",data:lo,borderColor:"transparent",pointRadius:0,backgroundColor:css("--fc")+"33",fill:"-1"}
+  ];
+  if(chart) chart.destroy();
+  chart=new Chart($("chart"),{type:"line",data:{labels:hl.concat(fl),datasets:ds},options:{
+    responsive:true,maintainAspectRatio:false,interaction:{mode:"index",intersect:false},
+    plugins:{legend:{labels:{filter:i=>i.text!=="upper",color:css("--ink"),usePointStyle:false}}},
+    scales:{x:{ticks:{maxTicksLimit:8,color:css("--mute")},grid:{display:false}},
+            y:{ticks:{color:css("--mute")},grid:{color:css("--line")},title:{display:true,text:"KES per kg",color:css("--mute")}}}}});
+}
+
+function drawTable(s){
+  const all=Object.values(D.series), btn=r=>`<button class="link" data-c="${r.commodity}" data-m="${r.market}">${r.commodity}</button>`;
+  if(view==="policy"){
+    $("tblTitle").textContent=`Watchlist: ${s.market}`;
+    $("thead").innerHTML='<tr><th scope="col">Item</th><th scope="col">Now</th><th scope="col">6 months</th><th scope="col">Unusual moves</th></tr>';
+    $("tbody").innerHTML=all.filter(r=>r.market===s.market).sort((a,b)=>Math.abs(b.change_6m)-Math.abs(a.change_6m))
+      .map(r=>`<tr><td>${btn(r)}</td><td>${kes(r.now)}</td><td class="${r.direction}">${ARROW[r.direction]} ${pct(r.change_6m)}</td><td>${r.anomalies.length}</td></tr>`).join("");
+  } else {
+    $("tblTitle").textContent=`All foods in ${s.market}`;
+    $("thead").innerHTML='<tr><th scope="col">Item</th><th scope="col">Now</th><th scope="col">Outlook</th></tr>';
+    $("tbody").innerHTML=all.filter(r=>r.market===s.market)
+      .map(r=>`<tr><td>${btn(r)}</td><td>${kes(r.now)}</td><td class="${r.direction}">${ARROW[r.direction]} ${WORD[r.direction]}</td></tr>`).join("");
+  }
+}
+
+function drawAnomalies(s){
+  let rows;
+  if(view==="policy"){
+    rows=Object.values(D.series).flatMap(r=>r.anomalies.map(a=>({...a,label:`${r.commodity} · ${r.market}`})));
+    $("anomSub").textContent=`All ${rows.length} unusual moves across ${D.markets.length} markets, newest first`;
+  } else {
+    rows=s.anomalies.map(a=>({...a,label:`${s.commodity} · ${s.market}`}));
+    $("anomSub").textContent="Months where this price jumped or dropped more than normal";
+  }
+  rows.sort((a,b)=>b.date.localeCompare(a.date));
+  $("anom").innerHTML=(view==="policy"?rows:rows.slice(0,8)).map(a=>`<tr><td>${a.date}</td><td>${a.label}</td><td class="spike">${pct(a.change)}</td></tr>`).join("")
+    ||`<tr><td colspan="3" class="empty">No unusual moves found for this selection.</td></tr>`;
+}
+</script>
+</body>
+</html>
